@@ -8,7 +8,6 @@ from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, accuracy_score
-from xgboost import XGBClassifier
 
 class DataMaker:
     def __init__(self, filePath):
@@ -33,11 +32,10 @@ class ModelMaker:
         self.x = x
         self.y = y
         self.createModel()
-        self.xTrain, self.xTest, self.yTrain, self.yTest, self.yCheck, self.yRfPred, self.yXgbPred, self.xTrainModel, self.xTestModel = [None]*9
+        self.xTrain, self.xTest, self.yTrain, self.yTest, self.yCheck, self.yRfPred, self.xTrainModel, self.xTestModel = [None]*8
 
-    def createModel(self, criteria='gini', objective='binary:logistic', randomState = 42):
+    def createModel(self, criteria='gini', randomState = 42):
         self.rfModel = RandomForestClassifier(criterion=criteria, random_state=randomState)
-        self.xgbModel = XGBClassifier(objective=objective, random_state=randomState)
     
     def dataSplitting(self, testSize = 0.2, randomState = 42):
         self.xTrain, self.xTest, self.yTrain, self.yTest = train_test_split(self.x, self.y, test_size=testSize, random_state=randomState)
@@ -104,33 +102,22 @@ class ModelMaker:
 
     def trainModel(self):
         self.rfModel.fit(self.xTrainModel, self.yTrain)
-        self.xgbModel.fit(self.xTrainModel, self.yTrain)
 
     def makePrediction(self):
         self.yRfPred = self.rfModel.predict(self.xTestModel)
-        self.yXgbPred = self.xgbModel.predict(self.xTestModel)
         
     def createReport(self):
         reverseEncoder = pkl.load(open('bookingStatsEncode.pkl', 'rb'))
         self.yRfPred = reverseEncoder.inverse_transform(self.yRfPred)
-        self.yXgbPred = reverseEncoder.inverse_transform(self.yXgbPred)
 
         print("Classification Report for Random Forest")
         print(classification_report(self.yCheck, self.yRfPred))
 
-        print("Classification Report for XGBoost")
-        print(classification_report(self.yCheck, self.yXgbPred))
-
-    def saveBestModel(self):
+    def saveModel(self):
         rfAcc = accuracy_score(self.yCheck, self.yRfPred)
-        xgbAcc = accuracy_score(self.yCheck, self.yXgbPred)
+        print("\nRandom Forest Accuracy Score: %.3f" %rfAcc)
+        pkl.dump(self.rfModel, open('outputModel.pkl', 'wb'))
 
-        if (rfAcc > xgbAcc):
-            print("\nRandom Forest is the best model with Accuracy Score: %.3f" %rfAcc)
-            pkl.dump(self.rfModel, open('outputModel.pkl', 'wb'))
-        else:
-            print("\nXGB is the best model with Accuracy Score: %.3f" %xgbAcc)
-            pkl.dump(self.xgbModel, open('outputModel.pkl', 'wb'))
         
         
 
@@ -168,4 +155,4 @@ modelMaker.removeEncodedColumn(['index', 'type_of_meal_plan', 'room_type_reserve
 modelMaker.trainModel()
 modelMaker.makePrediction()
 modelMaker.createReport()
-modelMaker.saveBestModel()
+modelMaker.saveModel()
