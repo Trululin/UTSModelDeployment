@@ -79,8 +79,6 @@ def main():
     df = pd.concat([df, mealPlanEnc, roomTypeEnc, marketSegmentEnc], axis=1)
     df = df.drop(columns = ['type_of_meal_plan', 'room_type_reserved', 'market_segment_type'], axis=1)
 
-    
-
     if st.button('Get Booking Status'):
         # st.dataframe(df)
         inputData = df      
